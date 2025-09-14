@@ -16,7 +16,7 @@ export default function SignInPage() {
       options: {
         emailRedirectTo:
           typeof window !== 'undefined'
-            ? `${window.location.origin}/`
+            ? `${window.location.origin}/auth/callback`
             : undefined,
       },
     });
