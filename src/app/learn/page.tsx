@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
-type Word = { id: string; kanji: string; readings: string[] };
+type Word = { id: string; kanji: string; readings: string[]; created_at: string };
 
 export default function LearnPage() {
   const [word, setWord] = useState<Word | null>(null);
@@ -18,8 +18,8 @@ export default function LearnPage() {
       .select('*')
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
-    if (!error && data) setWord(data as any);
+      .returns<Word[]>();                 // ✅ 배열 타입으로 받아서
+    if (!error) setWord(data?.[0] ?? null); // ✅ 첫 항목만 선택
   }
 
   function check() {

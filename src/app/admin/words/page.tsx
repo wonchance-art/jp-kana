@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
-type Word = { id: string; kanji: string; readings: string[] };
+type Word = { id: string; kanji: string; readings: string[]; created_at: string };
 
 export default function AdminWordsPage() {
   const [kanji, setKanji] = useState('');
-  const [readings, setReadings] = useState(''); // 쉼표로 구분: はな,か
+  const [readings, setReadings] = useState(''); // 쉼표: はな,か
   const [list, setList] = useState<Word[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -17,9 +17,9 @@ export default function AdminWordsPage() {
       .from('words')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(200);
+      .returns<Word[]>();            // ✅ any 없이 타입 지정
     if (error) setMsg(error.message);
-    setList((data as any) || []);
+    setList(data ?? []);
   }
 
   async function addWord(e: React.FormEvent) {
