@@ -1,6 +1,6 @@
 // src/app/api/dict/route.ts
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseServer';
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
 // 타입 선언
 type JishoSense = {
@@ -23,6 +23,14 @@ function isSentenceArray(x: unknown): x is SentenceLike[] {
 }
 
 export async function GET(request: Request) {
+  let supabaseAdmin;
+  try {
+    supabaseAdmin = getSupabaseAdmin();
+  } catch (err) {
+    console.error('Supabase admin client unavailable', err);
+    return NextResponse.json({ error: 'Server misconfigured: Supabase credentials missing.' }, { status: 500 });
+  }
+
   const { searchParams } = new URL(request.url);
   const term = searchParams.get('q')?.trim();
   if (!term) return NextResponse.json({ error: 'q required' }, { status: 400 });
