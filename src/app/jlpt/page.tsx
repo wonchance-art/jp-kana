@@ -63,7 +63,7 @@ export default function JLPTPage() {
       return;
     }
 
-    const rows = (data ?? [])
+    const rows = ((data ?? []) as JLPTMapRow[])
       .map((r) => r.words) // ★ any 제거
       .filter((w): w is WordRow => Boolean(w)); // 좁히기
 
