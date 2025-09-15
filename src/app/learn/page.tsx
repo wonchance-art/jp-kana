@@ -213,7 +213,7 @@ export default function LearnPage() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                inputMode="kana"
+                inputMode="text"
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="none"
