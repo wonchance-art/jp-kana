@@ -27,6 +27,11 @@ function pickWeighted<T>(items: T[], weights: number[]) {
   return items[items.length - 1];
 }
 
+function isIMEComposing(e: React.KeyboardEvent<HTMLInputElement>): boolean {
+  const anyE = e as unknown as { isComposing?: boolean; nativeEvent?: { isComposing?: boolean } };
+  return Boolean(anyE?.isComposing || anyE?.nativeEvent?.isComposing);
+}
+
 export default function LearnPage() {
   const [word, setWord] = useState<Word | null>(null);
   const [input, setInput] = useState('');
@@ -54,15 +59,15 @@ export default function LearnPage() {
 
   // 키보드 UX (Enter=채점, Esc=다음). IME 조합중엔 건드리지 않음
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.isComposing) return;
+    if (isIMEComposing(e)) return;
+
     const metaSubmit = (e.metaKey || e.ctrlKey) && e.key === 'Enter';
     if (e.key === 'Enter' || metaSubmit) {
       e.preventDefault();
-      void check();
-    }
-    if (e.key === 'Escape') {
+      void check();          // ← 즉시 채점
+    } else if (e.key === 'Escape') {
       e.preventDefault();
-      void loadNext();
+      void loadNext();       // ← 다음 문제
     }
   };
 
