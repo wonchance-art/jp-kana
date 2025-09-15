@@ -143,14 +143,21 @@ export default function MePage() {
         .limit(500);
       setStatLoading(false);
 
-      const normalized: AttemptRow[] = (data ?? []).map((r: any) => ({
+    const normalized: AttemptRow[] = (data ?? []).map((r: {
+        id: string;
+        word_id: string;
+        input: string;
+        correct: boolean;
+        created_at: string;
+        words?: { kanji: string; readings: string[] }[] | null;
+    }) => ({
         id: r.id,
         word_id: r.word_id,
         input: r.input,
         correct: r.correct,
         created_at: r.created_at,
         words: Array.isArray(r.words) ? (r.words[0] ?? null) : (r.words ?? null),
-      }));
+    }));
 
       setStatRows(normalized);
     })();
