@@ -16,6 +16,13 @@ type WordRow = {
 const LEVELS = ['N5','N4','N3','N2','N1'] as const;
 type Level = typeof LEVELS[number];
 
+// ▼ JLPT 매핑 테이블에서 select 한 행의 타입
+type JLPTMapRow = {
+  word_id: string;
+  level: Level;
+  words: WordRow | null;
+};
+
 export default function JLPTPage() {
   const [level, setLevel] = useState<Level>('N5');
   const [list, setList] = useState<WordRow[]>([]);
@@ -23,12 +30,10 @@ export default function JLPTPage() {
   const [fetching, setFetching] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // 오디오 재생 관리 (한 번에 하나만 재생)
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     void loadLevel(level);
-    // cleanup: 페이지 벗어나면 오디오 정지
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
@@ -41,23 +46,30 @@ export default function JLPTPage() {
   async function loadLevel(lv: Level) {
     setLoading(true);
     setError(null);
+
     const { data, error } = await supabase
       .from('jlpt_map')
       .select('word_id, level, words (id, kanji, kana, readings, meaning, audio_url)')
       .eq('level', lv)
       .order('word_id', { ascending: true })
-      .limit(200);
+      .limit(200)
+      .returns<JLPTMapRow[]>(); // ★ 결과 타입 지정
+
     setLoading(false);
+
     if (error) {
       setError(error.message);
       setList([]);
       return;
     }
-    const rows = (data ?? []).map((r: any) => r.words).filter(Boolean) as WordRow[];
+
+    const rows = (data ?? [])
+      .map((r) => r.words) // ★ any 제거
+      .filter((w): w is WordRow => Boolean(w)); // 좁히기
+
     setList(rows);
   }
 
-  // 외부 사전에서 가져와 캐시 → 현재 레벨 다시 로드
   async function fetchFromDict(kanji: string) {
     try {
       setFetching(kanji);
@@ -68,9 +80,7 @@ export default function JLPTPage() {
     }
   }
 
-  // 오디오 재생: URL 있으면 mp3, 없으면 TTS 폴백
   function playAudioOrTTS(w: WordRow) {
-    // mp3 우선
     if (w.audio_url) {
       try {
         if (audioRef.current) {
@@ -79,30 +89,22 @@ export default function JLPTPage() {
         }
         const a = new Audio(w.audio_url);
         audioRef.current = a;
-        a.play().catch(() => {
-          // mp3 실패 시 TTS 폴백
-          ttsFallback(w);
-        });
+        a.play().catch(() => ttsFallback(w));
         return;
       } catch {
-        // 안전망
         ttsFallback(w);
         return;
       }
     }
-    // mp3가 없으면 바로 TTS
     ttsFallback(w);
   }
 
   function ttsFallback(w: WordRow) {
-    // 브라우저 TTS (품질은 mp3보다 낮음)
-    const text = w.kana || w.kanji; // 가능하면 가나 우선
+    const text = w.kana || w.kanji;
     if (!('speechSynthesis' in window)) return;
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'ja-JP';
-    // iOS/브라우저별 볼륨/속도는 상황에 맞게 조정 가능
-    // u.rate = 1; u.pitch = 1; u.volume = 1;
-    window.speechSynthesis.cancel(); // 겹치기 방지
+    window.speechSynthesis.cancel();
     window.speechSynthesis.speak(u);
   }
 
@@ -169,7 +171,6 @@ export default function JLPTPage() {
                   </div>
                 </div>
 
-                {/* 오디오가 전혀 안되는 환경 안내 (선택) */}
                 {!w.audio_url && typeof window !== 'undefined' && !('speechSynthesis' in window) && (
                   <div className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1 inline-flex items-center gap-1">
                     <VolumeX className="w-3 h-3" />
